@@ -1,0 +1,388 @@
+//LABELS IEPs BY TYPE inital label changes to annual when MET and IEP dates are updated...ORIGINAL CODE
+function labelIEPTypeDue() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var lastRow = sheet.getLastRow();
+  
+  // Get ranges for METdate, IEPTypeDue, and IEPdate columns starting from row 4
+  var metDateRange = sheet.getRange("J4:J" + lastRow);
+  var iepTypeDueRange = sheet.getRange("H4:H" + lastRow);
+  var iepDateRange = sheet.getRange("L4:L" + lastRow);
+
+  // Get the current school year dates
+  var startDate = new Date("2023-08-01");
+  var endDate = new Date("2024-06-30");
+
+  // Get MET dates and IEP dates
+  var metDates = metDateRange.getValues();
+  var iepDates = iepDateRange.getValues();
+  var iepTypeDueValues = iepTypeDueRange.getValues();
+
+  // Iterate through METdate column to label IEPTypeDue as "reeval" or "annual"
+  for (var i = 0; i < metDates.length; i++) {
+    var originalDate = new Date(metDates[i][0]);
+    for (var j = 3; j <= 15; j += 3) {
+      var newDate = new Date(originalDate);
+      newDate.setFullYear(newDate.getFullYear() + j);
+      if (newDate >= startDate && newDate <= endDate) {
+        iepTypeDueValues[i][0] = "reeval";
+        break;
+      } else if (newDate > endDate) {
+        iepTypeDueValues[i][0] = "annual";
+        break;
+      }
+    }
+  }
+
+  // Set values in IEPTypeDue column
+  iepTypeDueRange.setValues(iepTypeDueValues);
+
+  // Iterate through IEPTypeDue column to label IEPTypeDue as "annual" or "initial" for blank cells
+  for (var i = 0; i < iepTypeDueValues.length; i++) {
+    if (iepTypeDueValues[i][0] === "") {
+      var iepDateValue = iepDates[i][0];
+      if (iepDateValue !== "") {
+        var oneYearLater = new Date(iepDateValue);
+        oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+        if (oneYearLater >= startDate && oneYearLater <= endDate) {
+          iepTypeDueValues[i][0] = "annual";
+        } else {
+          iepTypeDueValues[i][0] = "initial";
+        }
+      } else {
+        iepTypeDueValues[i][0] = "initial";
+      }
+    }
+  }
+
+  // Set updated values in IEPTypeDue column
+  iepTypeDueRange.setValues(iepTypeDueValues);
+}
+
+//****************************************************************************************
+
+//COLOR ROWS by DATES - IMPROVED VERSION?
+function colorRowsBasedOnDate() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var lastRow = sheet.getLastRow();
+  var today = new Date();
+  var schoolYearStartDate = new Date("2023-08-01");
+  var schoolYearEndDate = new Date("2024-06-30");
+  var IEPTypeDueColumnIndex = getColumnIndex(sheet, "IEPTypeDue");
+  var METdateColumnIndex = getColumnIndex(sheet, "METdate");
+  var REEDdateColumnIndex = getColumnIndex(sheet, "REEDdate");
+  var IEPdateColumnIndex = getColumnIndex(sheet, "IEPdate");
+
+  var iepTypeDueRange = sheet.getRange(3, IEPTypeDueColumnIndex, lastRow - 2, 1);
+  var metDateRange = sheet.getRange(3, METdateColumnIndex, lastRow - 2, 1);
+  var reedDateRange = sheet.getRange(3, REEDdateColumnIndex, lastRow - 2, 1);
+  var iepDateRange = sheet.getRange(3, IEPdateColumnIndex, lastRow - 2, 1);
+
+  var iepTypeDueValues = iepTypeDueRange.getValues();
+  var metDates = metDateRange.getValues();
+  var reedDates = reedDateRange.getValues();
+  var iepDates = iepDateRange.getValues();
+
+  for (var i = 0; i < iepTypeDueValues.length; i++) {
+    var iepType = iepTypeDueValues[i][0];
+    if (iepType === "reeval") {
+      var originalMETdate = new Date(metDates[i][0]);
+      var newMETdate = new Date(originalMETdate);
+      newMETdate.setFullYear(today.getFullYear());
+
+      if (
+        newMETdate.getMonth() === today.getMonth() &&
+        newMETdate.getDate() <= today.getDate() &&
+        newMETdate.getDate() >= today.getDate() - 30 &&
+        today >= schoolYearStartDate &&
+        today <= schoolYearEndDate
+      ) {
+        sheet.getRange(i + 3, METdateColumnIndex).setBackground("#ffcc00"); // Orange
+      }
+
+      if (
+        newMETdate >= schoolYearStartDate &&
+        newMETdate <= schoolYearEndDate &&
+        today >= schoolYearStartDate &&
+        today <= schoolYearEndDate &&
+        today > newMETdate
+      ) {
+        sheet.getRange(i + 3, METdateColumnIndex).setBackground("#ff6666"); // Red
+      }
+
+      if (reedDates[i][0] && reedDates[i][0] >= schoolYearStartDate && reedDates[i][0] <= schoolYearEndDate) {
+        sheet.getRange(i + 3, METdateColumnIndex).setBackground(null); // Remove color
+      }
+    }
+
+    var originalIEPdate = new Date(iepDates[i][0]);
+    var newIEPdate = new Date(originalIEPdate);
+    newIEPdate.setFullYear(originalIEPdate.getFullYear() + 1);
+
+    if (newIEPdate >= schoolYearStartDate && newIEPdate <= schoolYearEndDate) {
+      if (
+        newIEPdate.getMonth() === today.getMonth() &&
+        newIEPdate.getDate() <= today.getDate() &&
+        newIEPdate.getDate() >= today.getDate() - 14
+      ) {
+        sheet.getRange(i + 3, IEPdateColumnIndex).setBackground("#ff99cc"); // Pink
+      }
+
+      if (today >= schoolYearStartDate && today <= schoolYearEndDate && today > newIEPdate) {
+        sheet.getRange(i + 3, IEPdateColumnIndex).setBackground("#ff6666"); // Red
+      }
+    }
+
+    if (iepType === "initial" && metDates[i][0] === "") {
+      var REEDdate = new Date(reedDates[i][0]);
+      if (
+        REEDdate &&
+        REEDdate >= today &&
+        REEDdate <= new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000) &&
+        today >= schoolYearStartDate &&
+        today <= schoolYearEndDate
+      ) {
+        sheet.getRange(i + 3, METdateColumnIndex).setBackground("#ffcc00"); // Orange
+      } else if (REEDdate && REEDdate <= today && REEDdate >= schoolYearStartDate && REEDdate <= schoolYearEndDate) {
+        sheet.getRange(i + 3, METdateColumnIndex).setBackground("#ff6666"); // Red
+      }
+    }
+  }
+}
+
+//COLOR ROWS by DATES - highlights the no additional studies MET-IEPs and initials correctly
+// function colorRowsBasedOnDate() {
+//   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+//   var lastRow = sheet.getLastRow();
+//   var today = new Date();
+//   var schoolYearStartDate = new Date("2023-08-01");
+//   var schoolYearEndDate = new Date("2024-06-30");
+//   var IEPTypeDueColumnIndex = getColumnIndex(sheet, "IEPTypeDue");
+//   var METdateColumnIndex = getColumnIndex(sheet, "METdate");
+//   var REEDdateColumnIndex = getColumnIndex(sheet, "REEDdate");
+//   var IEPdateColumnIndex = getColumnIndex(sheet, "IEPdate");
+
+//   var iepTypeDueRange = sheet.getRange(3, IEPTypeDueColumnIndex, lastRow - 2, 1);
+//   var metDateRange = sheet.getRange(3, METdateColumnIndex, lastRow - 2, 1);
+//   var reedDateRange = sheet.getRange(3, REEDdateColumnIndex, lastRow - 2, 1);
+//   var iepDateRange = sheet.getRange(3, IEPdateColumnIndex, lastRow - 2, 1);
+
+//   var iepTypeDueValues = iepTypeDueRange.getValues();
+//   var metDates = metDateRange.getValues();
+//   var reedDates = reedDateRange.getValues();
+//   var iepDates = iepDateRange.getValues();
+
+//   for (var i = 0; i < iepTypeDueValues.length; i++) {
+//     var iepType = iepTypeDueValues[i][0];
+//     if (iepType === "reeval") {
+//       var originalMETdate = new Date(metDates[i][0]);
+//       var newMETdate = new Date(originalMETdate);
+//       newMETdate.setFullYear(today.getFullYear());
+
+//       if (
+//         newMETdate.getMonth() === today.getMonth() &&
+//         newMETdate.getDate() <= today.getDate() &&
+//         newMETdate.getDate() >= today.getDate() - 30 &&
+//         today >= schoolYearStartDate &&
+//         today <= schoolYearEndDate
+//       ) {
+//         sheet.getRange(i + 3, METdateColumnIndex).setBackground("#ffcc00"); // Orange
+//       }
+
+//       if (
+//         newMETdate >= schoolYearStartDate &&
+//         newMETdate <= schoolYearEndDate &&
+//         today >= schoolYearStartDate &&
+//         today <= schoolYearEndDate &&
+//         today > newMETdate
+//       ) {
+//         sheet.getRange(i + 3, METdateColumnIndex).setBackground("#ff6666"); // Red
+//       }
+
+//       if (reedDates[i][0] && reedDates[i][0] >= schoolYearStartDate && reedDates[i][0] <= schoolYearEndDate) {
+//         sheet.getRange(i + 3, METdateColumnIndex).setBackground(null); // Remove color
+//       }
+//     }
+
+//     var originalIEPdate = new Date(iepDates[i][0]);
+//     var newIEPdate = new Date(originalIEPdate);
+//     newIEPdate.setFullYear(originalIEPdate.getFullYear() + 1);
+
+//     if (newIEPdate >= schoolYearStartDate && newIEPdate <= schoolYearEndDate) {
+//       if (
+//         newIEPdate.getMonth() === today.getMonth() &&
+//         newIEPdate.getDate() <= today.getDate() &&
+//         newIEPdate.getDate() >= today.getDate() - 14
+//       ) {
+//         sheet.getRange(i + 3, IEPdateColumnIndex).setBackground("#ff99cc"); // Pink
+//       }
+
+//       if (today >= schoolYearStartDate && today <= schoolYearEndDate && today > newIEPdate) {
+//         sheet.getRange(i + 3, IEPdateColumnIndex).setBackground("#ff6666"); // Red
+//       }
+//     }
+
+//     if (iepType === "initial" && metDates[i][0] === "") {
+//       var REEDdate = new Date(reedDates[i][0]);
+//       if (
+//         REEDdate &&
+//         REEDdate >= today &&
+//         REEDdate <= new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000) &&
+//         today >= schoolYearStartDate &&
+//         today <= schoolYearEndDate
+//       ) {
+//         sheet.getRange(i + 3, METdateColumnIndex).setBackground("#ffcc00"); // Orange
+//       } else if (REEDdate && REEDdate <= today && REEDdate >= schoolYearStartDate && REEDdate <= schoolYearEndDate) {
+//         sheet.getRange(i + 3, METdateColumnIndex).setBackground("#ff6666"); // Red
+//       }
+//     }
+//   }
+// }
+
+function getColumnIndex(sheet, columnName) {
+  var headers = sheet.getRange(3, 1, 1, sheet.getLastColumn()).getValues()[0];
+  return headers.indexOf(columnName) + 1;
+}
+
+//*******************************************************************************************************
+
+// Analyze colors in METdate and IEPdate columns and save the color counts
+function analyzeDateColumnColors() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var lastRow = sheet.getLastRow();
+
+  // Define column ranges for METdate and IEPdate
+  var metDateRange = sheet.getRange("J4:J" + lastRow);
+  var iepDateRange = sheet.getRange("L4:L" + lastRow);
+
+  // Get background colors for METdate and IEPdate columns
+  var metBackgrounds = metDateRange.getBackgrounds();
+  var iepBackgrounds = iepDateRange.getBackgrounds();
+
+  // Initialize variables for counting distinct colors
+  var metColors = {};
+  var iepColors = {};
+
+  // Function to analyze colors and update counts
+  function analyzeColors(backgrounds, colors) {
+    // Iterate through each cell's background color
+    for (var i = 0; i < backgrounds.length; i++) {
+      var color = backgrounds[i][0]; // Get background color of current cell
+      if (color) { // Check if color is not empty
+        if (!colors[color]) {
+          colors[color] = 1; // Initialize count for this color
+        } else {
+          colors[color]++; // Increment count for this color
+        }
+      }
+    }
+  }
+
+  // Analyze colors in METdate column
+  analyzeColors(metBackgrounds, metColors);
+
+  // Analyze colors in IEPdate column
+  analyzeColors(iepBackgrounds, iepColors);
+
+  // Return the color counts
+  return {
+    metColors: metColors,
+    iepColors: iepColors
+  };
+}
+
+//*******************************************************************************************************
+
+// // Display pop-up messages about color-coded cells in METdate and IEPdate columns...ORIGINAL CODE
+// function displayColorPopups() {
+//   var colorCounts = analyzeDateColumnColors(); // Get the color counts from the analyzeDateColumnColors function
+
+//   var metColors = colorCounts.metColors || {};
+//   var iepColors = colorCounts.iepColors || {};
+
+//   var orangeCount = metColors["#ffcc00"] || 0;
+//   var pinkCount = iepColors["#ff99cc"] || 0;
+//   var redCount = iepColors["#ff6666"] + metColors["#ff6666"] || 0;
+
+//   // Display pop-up messages for each color count
+//   var ui = SpreadsheetApp.getUi();
+
+//   ui.alert("URGENT: " + redCount + " reevaluation and/or annual IEP(s) overdue.");
+//   ui.alert("You have " + orangeCount + " reevaluation IEP(s) due in 30 calendar days or less.");
+//   ui.alert("You have " + pinkCount + " annual IEP(s) due within 14 calendar days or less.");
+// }
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//MENU BUTTON -NEW FUNCTION
+// Function to create a custom menu in the Google Sheets UI
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('Messages')
+    .addItem('Display IEP Notifications', 'displayColorPopups')
+    .addToUi();
+}
+
+// Display pop-up messages about color-coded cells in METdate and IEPdate columns
+function displayColorPopups() {
+  var colorCounts = analyzeDateColumnColors(); // Get the color counts from the analyzeDateColumnColors function
+
+  var metColors = colorCounts.metColors || {};
+  var iepColors = colorCounts.iepColors || {};
+
+  var orangeCount = metColors["#ffcc00"] || 0;
+  var pinkCount = iepColors["#ff99cc"] || 0;
+  var redCount = iepColors["#ff6666"] + metColors["#ff6666"] || 0;
+
+  // Display pop-up messages for each color count
+  var ui = SpreadsheetApp.getUi();
+
+  ui.alert("URGENT: " + redCount + " reevaluation and/or annual IEP(s) overdue.");
+  ui.alert("You have " + orangeCount + " reevaluation IEP(s) due in 30 calendar days or less.");
+  ui.alert("You have " + pinkCount + " annual IEP(s) due within 14 calendar days or less.");
+}
+
+// Function to analyze colors in METdate and IEPdate columns and save the color counts
+function analyzeDateColumnColors() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var lastRow = sheet.getLastRow();
+
+  // Define column ranges for METdate and IEPdate
+  var metDateRange = sheet.getRange("J4:J" + lastRow);
+  var iepDateRange = sheet.getRange("L4:L" + lastRow);
+
+  // Get background colors for METdate and IEPdate columns
+  var metBackgrounds = metDateRange.getBackgrounds();
+  var iepBackgrounds = iepDateRange.getBackgrounds();
+
+  // Initialize variables for counting distinct colors
+  var metColors = {};
+  var iepColors = {};
+
+  // Function to analyze colors and update counts
+  function analyzeColors(backgrounds, colors) {
+    // Iterate through each cell's background color
+    for (var i = 0; i < backgrounds.length; i++) {
+      var color = backgrounds[i][0]; // Get background color of current cell
+      if (color) { // Check if color is not empty
+        if (!colors[color]) {
+          colors[color] = 1; // Initialize count for this color
+        } else {
+          colors[color]++; // Increment count for this color
+        }
+      }
+    }
+  }
+
+  // Analyze colors in METdate column
+  analyzeColors(metBackgrounds, metColors);
+
+  // Analyze colors in IEPdate column
+  analyzeColors(iepBackgrounds, iepColors);
+
+  // Return the color counts
+  return {
+    metColors: metColors,
+    iepColors: iepColors
+  };
+}
+
+//*******************************************************************************************************
