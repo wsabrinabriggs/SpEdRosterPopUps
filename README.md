@@ -18,10 +18,12 @@ Red rows means overdue and orange or pink rows, means the reeval or annual IEP i
 - including a custom menu button to manually run the pop-up messages
 
 **Challenges**
-- appropriate labeling of IEP types
-           *maintaining the initial label for IEPs...instead the label is changed over to "annual" (remedy: for now, users are to rely on the "Initial_IEP" column for confirmation of an initial IEP or not) (EX: Fredricks, Kevin row)
-           * new data entries improperly labeled initial (EX: Heumann, Judith row)
-- color coding for the following color and IEP type: pink for annuals
+1. appropriate labeling of IEP types
+* maintaining the initial label for IEPs...instead the label is changed over to "annual" (remedy: for now, users are to rely on the "Initial_IEP" column for confirmation of an initial IEP or not) (EX: Fredricks, Kevin row)
+* maintaining the reeval label for updated reeval IEPs...instead the label is changed over to "annual" (remedy: rename column to "NEXT_IEPTypeDue". The IEP's labeling will be correct if thinking of the next IEP due.) (EX: Randolph, Da'Vine)
+* new data entries improperly labeled initial (EX: Heumann, Judith row)
+  
+2. color coding for the following color and IEP type: pink for annuals
 
 **Sources & Tools used**
 - chatGPT
