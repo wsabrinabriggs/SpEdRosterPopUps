@@ -7,7 +7,7 @@ The spreadsheet displays pop-up messages about the type and number of IEPs due a
 The messages pop up whenever the spreadsheet is opened, refreshed, and when activated from the custom menu. 
 There are 3 types of IEPs: initial, reevaluation (reeval), and annual, and due dates vary. 
 To support the tracking of due dates, color coding is used. 
-Red rows means overdue and orange or pink rows, that means the reeval or annual IEP is in 30 calendar days or 14 calendar days, respectfully 
+Red rows means overdue and orange or pink rows, means the reeval or annual IEP is in 30 calendar days or 14 calendar days, respectfully 
 
 **Successes**
 - using a datedif formula to automatically calculate the age of the ficticious students based on the DOB (date of birth) entry
@@ -15,7 +15,7 @@ Red rows means overdue and orange or pink rows, that means the reeval or annual 
 - labeling 2 types of IEPs (reeval and annual) correctly based on their date and IDEA laws
 - color coding works for the following colors and IEP types: red for both reevals and annuals, orange for reevals
 - running the script using triggers
-- including a custom menu button to manual run the pop-up messages
+- including a custom menu button to manually run the pop-up messages
 
 **Challenges**
 - appropriate labeling of IEP types
